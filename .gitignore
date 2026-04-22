@@ -1,0 +1,13 @@
+node_modules/
+.next/
+out/
+build/
+.env
+.env*.local
+*.log
+.DS_Store
+.vercel
+next-env.d.ts
+.kotlin/
+_kotlin_legacy/.gradle/
+_kotlin_legacy/build/
