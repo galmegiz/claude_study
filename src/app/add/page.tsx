@@ -1,19 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useGuildStore } from "@/lib/store";
 import { AddForm } from "@/components/AddForm";
 import { CsvUpload } from "@/components/CsvUpload";
+import { GuildImport } from "@/components/GuildImport";
 
 export default function AddPage() {
   const addCharacter = useGuildStore((s) => s.addCharacter);
   const addMany = useGuildStore((s) => s.addMany);
+  const adminMode = useGuildStore((s) => s.adminMode);
   const router = useRouter();
 
-  const [mode, setMode] = useState<"form" | "csv">("form");
+  const [mode, setMode] = useState<"form" | "csv" | "guild">("guild");
   const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!adminMode && mode !== "guild") setMode("guild");
+  }, [adminMode, mode]);
 
   const flash = (msg: string) => {
     setToast(msg);
@@ -30,24 +36,32 @@ export default function AddPage() {
           ← 대시보드로
         </Link>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">
-          캐릭터 추가
+          길드원 갱신
         </h1>
         <p className="mt-1 text-sm text-[var(--text-muted)]">
-          수기 입력 또는 CSV 업로드로 길드원을 등록합니다. 이름에 &ldquo;없는&rdquo;이 포함되면
-          조회 실패로 시뮬레이트됩니다.
+          전투정보실 길드 페이지로부터 길드원 목록을 가져옵니다.
+          {adminMode &&
+            " 관리자 모드에서는 수기 입력 / CSV 업로드 탭도 사용할 수 있습니다."}
         </p>
       </div>
 
       <div className="inline-flex gap-1 self-start rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1 text-sm">
-        <Tab active={mode === "form"} onClick={() => setMode("form")}>
-          수기 입력
+        <Tab active={mode === "guild"} onClick={() => setMode("guild")}>
+          길드 페이지에서 가져오기
         </Tab>
-        <Tab active={mode === "csv"} onClick={() => setMode("csv")}>
-          CSV 업로드
-        </Tab>
+        {adminMode && (
+          <>
+            <Tab active={mode === "form"} onClick={() => setMode("form")}>
+              수기 입력
+            </Tab>
+            <Tab active={mode === "csv"} onClick={() => setMode("csv")}>
+              CSV 업로드
+            </Tab>
+          </>
+        )}
       </div>
 
-      {mode === "form" ? (
+      {mode === "form" && (
         <AddForm
           onSubmit={(input) => {
             const result = addCharacter(input);
@@ -58,7 +72,8 @@ export default function AddPage() {
             );
           }}
         />
-      ) : (
+      )}
+      {mode === "csv" && (
         <CsvUpload
           onSubmit={(inputs) => {
             const { added, duplicates } = addMany(inputs);
@@ -67,6 +82,9 @@ export default function AddPage() {
             );
           }}
         />
+      )}
+      {mode === "guild" && (
+        <GuildImport onImportComplete={(msg) => flash(msg)} />
       )}
 
       <div className="flex items-center justify-end gap-2">

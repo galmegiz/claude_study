@@ -46,11 +46,16 @@ export function dummyFetch(input: CharacterInput): Character {
     now - daysBack * 24 * 60 * 60 * 1000 - minutesJitter * 60 * 1000,
   );
 
-  const level = rand(seed + 1, 60, 80);
-  const avg = level >= 80 ? rand(seed + 2, 580, 660) : rand(seed + 2, 380, 560);
+  const level = input.level ?? rand(seed + 1, 60, 90);
+  const avg =
+    level >= 85
+      ? rand(seed + 2, 620, 690)
+      : level >= 80
+        ? rand(seed + 2, 580, 660)
+        : rand(seed + 2, 380, 560);
   const equipped = Math.max(avg - rand(seed + 3, 0, 6), 1);
 
-  const charClass =
+  const charClass: CharacterClass =
     input.charClass ?? CLASSES[rand(seed + 5, 0, CLASSES.length - 1)];
 
   const addedAt = new Date().toISOString();

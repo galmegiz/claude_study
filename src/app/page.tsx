@@ -17,6 +17,7 @@ export default function DashboardPage() {
   const refreshAll = useGuildStore((s) => s.refreshAll);
   const resetToSeed = useGuildStore((s) => s.resetToSeed);
   const clearAll = useGuildStore((s) => s.clearAll);
+  const adminMode = useGuildStore((s) => s.adminMode);
 
   const [search, setSearch] = useState("");
   const [realmFilter, setRealmFilter] = useState("");
@@ -97,7 +98,7 @@ export default function DashboardPage() {
             href="/add"
             className="rounded-md bg-brand-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-600"
           >
-            + 캐릭터 추가
+            길드원 갱신
           </Link>
         </div>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -134,13 +135,6 @@ export default function DashboardPage() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={refreshAll}
-            className="rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-sm hover:bg-[var(--surface-muted)]"
-          >
-            전체 재조회
-          </button>
-          <button
-            type="button"
             onClick={handleExportCsv}
             className="rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-sm hover:bg-[var(--surface-muted)]"
           >
@@ -153,32 +147,48 @@ export default function DashboardPage() {
           >
             JSON 내보내기
           </button>
-          <div className="ml-auto flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                if (confirm("시드 데이터로 되돌리시겠습니까? 현재 변경사항이 사라집니다.")) {
-                  resetToSeed();
-                }
-              }}
-              className="rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-sm text-[var(--text-muted)] hover:bg-[var(--surface-muted)]"
-            >
-              시드로 리셋
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (confirm("모든 캐릭터를 삭제하시겠습니까?")) clearAll();
-              }}
-              className="rounded-md border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-sm text-rose-400 hover:bg-rose-500/20"
-            >
-              전체 삭제
-            </button>
-          </div>
+          {adminMode && (
+            <>
+              <button
+                type="button"
+                onClick={refreshAll}
+                className="rounded-md border border-amber-400/40 bg-amber-400/10 px-3 py-1.5 text-sm text-amber-200 hover:bg-amber-400/20"
+              >
+                전체 재조회
+              </button>
+              <div className="ml-auto flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (
+                      confirm(
+                        "시드 데이터로 되돌리시겠습니까? 현재 변경사항이 사라집니다.",
+                      )
+                    ) {
+                      resetToSeed();
+                    }
+                  }}
+                  className="rounded-md border border-amber-400/40 bg-amber-400/10 px-3 py-1.5 text-sm text-amber-200 hover:bg-amber-400/20"
+                >
+                  시드로 리셋
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm("모든 캐릭터를 삭제하시겠습니까?")) clearAll();
+                  }}
+                  className="rounded-md border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-sm text-rose-400 hover:bg-rose-500/20"
+                >
+                  전체 삭제
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
         <CharacterTable
           rows={visible}
+          adminMode={adminMode}
           onDelete={removeCharacter}
           onRefresh={refreshCharacter}
         />

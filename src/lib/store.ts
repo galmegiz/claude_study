@@ -3,17 +3,48 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import seedData from "../../data/characters.json";
-import type { Character, CharacterInput } from "./types";
+import type { Character, CharacterInput, CharacterClass } from "./types";
 import { dummyFetch } from "./dummyFetch";
+
+export interface PendingTarget {
+  id: string;
+  realm: string;
+  name: string;
+}
+
+export interface ProfilePatch {
+  level: number | null;
+  equippedItemLevel: number | null;
+  averageItemLevel: number | null;
+  lastLoginIso: string | null;
+  charClass?: CharacterClass | null;
+}
+
+export interface EnrichmentState {
+  total: number;
+  done: number;
+  startedAt: number;
+}
 
 const SEED: Character[] = seedData as Character[];
 
 interface GuildState {
   characters: Character[];
   hydrated: boolean;
+  adminMode: boolean;
+  enrichment: EnrichmentState | null;
+  setAdminMode: (v: boolean) => void;
   setHydrated: () => void;
   addCharacter: (input: CharacterInput) => Character;
   addMany: (inputs: CharacterInput[]) => { added: number; duplicates: number };
+  addPending: (
+    inputs: (CharacterInput & { rank?: number })[],
+  ) => { targets: PendingTarget[]; added: number; updated: number };
+  applyProfile: (id: string, patch: ProfilePatch) => void;
+  markError: (id: string) => void;
+  startEnrichment: (total: number) => void;
+  tickEnrichment: () => void;
+  endEnrichment: () => void;
   removeCharacter: (id: string) => void;
   refreshCharacter: (id: string) => void;
   refreshAll: () => void;
@@ -33,7 +64,109 @@ export const useGuildStore = create<GuildState>()(
     (set, get) => ({
       characters: SEED,
       hydrated: false,
+      adminMode: false,
+      enrichment: null,
+      setAdminMode: (v) => set({ adminMode: v }),
       setHydrated: () => set({ hydrated: true }),
+
+      addPending: (inputs) => {
+        const next = [...get().characters];
+        const targets: PendingTarget[] = [];
+        let added = 0;
+        let updated = 0;
+        for (const input of inputs) {
+          const idx = next.findIndex(
+            (c) =>
+              c.realm.trim().toLowerCase() === input.realm.trim().toLowerCase() &&
+              c.name.trim().toLowerCase() === input.name.trim().toLowerCase(),
+          );
+          if (idx >= 0) {
+            const existing = next[idx];
+            next[idx] = {
+              ...existing,
+              level: input.level ?? existing.level,
+              charClass:
+                (input.charClass as CharacterClass | undefined) ??
+                existing.charClass,
+              rank: input.rank ?? existing.rank,
+              equippedItemLevel: null,
+              averageItemLevel: null,
+              lastLoginIso: null,
+              source: "api",
+              status: "PENDING",
+              note: input.note ?? existing.note,
+            };
+            targets.push({
+              id: existing.id,
+              realm: existing.realm,
+              name: existing.name,
+            });
+            updated++;
+          } else {
+            const id = `api-${
+              typeof crypto !== "undefined" && crypto.randomUUID
+                ? crypto.randomUUID()
+                : Math.random().toString(36).slice(2)
+            }`;
+            const ch: Character = {
+              id,
+              realm: input.realm,
+              name: input.name,
+              charClass: (input.charClass as CharacterClass | undefined) ?? null,
+              level: input.level ?? null,
+              equippedItemLevel: null,
+              averageItemLevel: null,
+              lastLoginIso: null,
+              source: "api",
+              status: "PENDING",
+              rank: input.rank,
+              note: input.note,
+              addedAt: new Date().toISOString(),
+            };
+            next.unshift(ch);
+            targets.push({ id, realm: ch.realm, name: ch.name });
+            added++;
+          }
+        }
+        set({ characters: next });
+        return { targets, added, updated };
+      },
+
+      applyProfile: (id, patch) =>
+        set({
+          characters: get().characters.map((c) =>
+            c.id === id
+              ? {
+                  ...c,
+                  level: patch.level ?? c.level,
+                  equippedItemLevel: patch.equippedItemLevel,
+                  averageItemLevel: patch.averageItemLevel,
+                  lastLoginIso: patch.lastLoginIso,
+                  charClass:
+                    (patch.charClass as CharacterClass | undefined) ??
+                    c.charClass,
+                  source: "api",
+                  status: "OK",
+                }
+              : c,
+          ),
+        }),
+
+      markError: (id) =>
+        set({
+          characters: get().characters.map((c) =>
+            c.id === id ? { ...c, status: "ERROR" } : c,
+          ),
+        }),
+
+      startEnrichment: (total) =>
+        set({ enrichment: { total, done: 0, startedAt: Date.now() } }),
+      tickEnrichment: () => {
+        const e = get().enrichment;
+        if (!e) return;
+        set({ enrichment: { ...e, done: e.done + 1 } });
+      },
+      endEnrichment: () => set({ enrichment: null }),
 
       addCharacter: (input) => {
         const existing = get().characters.find((c) => sameCharacter(c, input));
@@ -128,7 +261,10 @@ export const useGuildStore = create<GuildState>()(
     {
       name: "wow-guild-store:v1",
       storage: createJSONStorage(() => localStorage),
-      partialize: (s) => ({ characters: s.characters }),
+      partialize: (s) => ({
+        characters: s.characters,
+        adminMode: s.adminMode,
+      }),
       skipHydration: true,
       onRehydrateStorage: () => (state) => state?.setHydrated?.(),
     },

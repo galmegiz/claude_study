@@ -33,15 +33,16 @@ export function parseCsv(input: string): CsvParseResult {
   if (nonEmpty.length === 0) return result;
 
   const header = splitRow(nonEmpty[0]).map((c) => c.trim().toLowerCase());
-  const realmIdx = header.indexOf("realm");
-  const nameIdx = header.indexOf("name");
-  const classIdx = header.indexOf("class");
-  const noteIdx = header.indexOf("note");
+  const realmIdx = findColumn(header, ["realm", "서버명", "서버"]);
+  const nameIdx = findColumn(header, ["name", "계정명", "캐릭터명", "캐릭명"]);
+  const classIdx = findColumn(header, ["class", "직업"]);
+  const noteIdx = findColumn(header, ["note", "메모"]);
 
   if (realmIdx < 0 || nameIdx < 0) {
     result.errors.push({
       line: 1,
-      message: "헤더에 'realm'과 'name' 컬럼이 필요합니다.",
+      message:
+        "헤더에 서버(realm/서버명)와 캐릭터(name/계정명) 컬럼이 필요합니다.",
     });
     return result;
   }
@@ -51,7 +52,7 @@ export function parseCsv(input: string): CsvParseResult {
     const realm = row[realmIdx]?.trim();
     const name = row[nameIdx]?.trim();
     if (!realm || !name) {
-      result.errors.push({ line: i + 1, message: "realm 또는 name이 비어 있음" });
+      result.errors.push({ line: i + 1, message: "서버 또는 캐릭터명이 비어 있음" });
       continue;
     }
     const rawClass = classIdx >= 0 ? row[classIdx]?.trim() : "";
@@ -72,6 +73,14 @@ export function parseCsv(input: string): CsvParseResult {
     });
   }
   return result;
+}
+
+function findColumn(header: string[], aliases: string[]): number {
+  for (const a of aliases) {
+    const i = header.indexOf(a.toLowerCase());
+    if (i >= 0) return i;
+  }
+  return -1;
 }
 
 function splitRow(line: string): string[] {

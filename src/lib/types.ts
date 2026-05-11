@@ -21,13 +21,14 @@ export interface Character {
   id: string;
   realm: string;
   name: string;
-  charClass: CharacterClass;
+  charClass: CharacterClass | null;
   level: number | null;
   equippedItemLevel: number | null;
   averageItemLevel: number | null;
   lastLoginIso: string | null;
   source: SourceKind;
   status: FetchStatus;
+  rank?: number;
   note?: string;
   addedAt: string;
 }
@@ -35,7 +36,8 @@ export interface Character {
 export interface CharacterInput {
   realm: string;
   name: string;
-  charClass?: CharacterClass;
+  charClass?: CharacterClass | null;
+  level?: number;
   note?: string;
 }
 

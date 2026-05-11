@@ -8,10 +8,11 @@ interface Props {
   onSubmit: (inputs: CharacterInput[]) => void;
 }
 
-const SAMPLE = `realm,name,class,note
-azshara,차넬,사제,길드마스터
-hyjal,홀리차넬,성기사,
-durotan,도적님,도적,메인 딜러
+const SAMPLE = `서버명,계정명
+azshara,차넬
+hyjal,홀리차넬
+durotan,도적님
+azshara,번달
 `;
 
 export function CsvUpload({ onSubmit }: Props) {
@@ -76,7 +77,7 @@ export function CsvUpload({ onSubmit }: Props) {
           setText(e.target.value);
           preview(e.target.value);
         }}
-        placeholder={"헤더 포함 CSV를 붙여넣거나 파일로 업로드하세요.\n예) realm,name,class,note"}
+        placeholder={"헤더 포함 CSV를 붙여넣거나 파일로 업로드하세요.\n예) 서버명,계정명"}
         rows={8}
         className="rounded-md border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2 font-mono text-xs"
       />
@@ -94,8 +95,8 @@ export function CsvUpload({ onSubmit }: Props) {
       <div className="flex items-center justify-between">
         <p className="text-xs text-[var(--text-muted)]">
           {parsed.length > 0
-            ? `파싱된 행 ${parsed.length}개 · 중복 (서버+이름)은 재조회로 처리됩니다.`
-            : "헤더에는 최소 realm, name이 필요합니다. class, note는 선택."}
+            ? `파싱된 행 ${parsed.length}개 · 중복 (서버+캐릭터명)은 재조회로 처리됩니다.`
+            : "필수 헤더: 서버명, 계정명 (영문 realm,name 도 허용). 직업·메모는 선택."}
         </p>
         <button
           type="button"
@@ -117,10 +118,10 @@ export function CsvUpload({ onSubmit }: Props) {
           <table className="min-w-full text-xs">
             <thead className="bg-[var(--surface-muted)] text-[var(--text-muted)]">
               <tr>
-                <th className="px-2 py-1 text-left">realm</th>
-                <th className="px-2 py-1 text-left">name</th>
-                <th className="px-2 py-1 text-left">class</th>
-                <th className="px-2 py-1 text-left">note</th>
+                <th className="px-2 py-1 text-left">서버명</th>
+                <th className="px-2 py-1 text-left">계정명</th>
+                <th className="px-2 py-1 text-left">직업</th>
+                <th className="px-2 py-1 text-left">메모</th>
               </tr>
             </thead>
             <tbody>
