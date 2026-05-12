@@ -1,7 +1,13 @@
 "use client";
 
 import type { Character } from "@/lib/types";
-import { formatKst, daysSince, cx } from "@/lib/format";
+import {
+  formatKst,
+  daysSince,
+  cx,
+  STALE_DAYS,
+  STALE_DAYS_SEVERE,
+} from "@/lib/format";
 
 interface Props {
   rows: Character[];
@@ -41,9 +47,9 @@ export function CharacterTable({ rows, adminMode, onDelete, onRefresh }: Props) 
             const staleTone =
               stale === null
                 ? "text-[var(--text-muted)]"
-                : stale >= 30
+                : stale >= STALE_DAYS_SEVERE
                   ? "text-rose-400"
-                  : stale >= 14
+                  : stale >= STALE_DAYS
                     ? "text-amber-400"
                     : "text-emerald-400";
 

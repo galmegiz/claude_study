@@ -14,6 +14,9 @@ export function formatKst(iso: string | null): string {
   return fmt.format(d).replace(/\. /g, "-").replace(/\./g, "") + " KST";
 }
 
+export const STALE_DAYS = 180;
+export const STALE_DAYS_SEVERE = STALE_DAYS * 2;
+
 export function daysSince(iso: string | null): number | null {
   if (!iso) return null;
   const d = new Date(iso);

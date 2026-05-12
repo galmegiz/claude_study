@@ -7,7 +7,7 @@ import { CharacterTable } from "@/components/CharacterTable";
 import { FilterBar } from "@/components/FilterBar";
 import { Stat } from "@/components/Stat";
 import type { SortDir, SortField } from "@/lib/types";
-import { daysSince } from "@/lib/format";
+import { daysSince, STALE_DAYS } from "@/lib/format";
 import { toCsv, downloadBlob } from "@/lib/csv";
 
 export default function DashboardPage() {
@@ -38,7 +38,7 @@ export default function DashboardPage() {
       if (realmFilter && c.realm !== realmFilter) return false;
       if (staleOnly) {
         const d = daysSince(c.lastLoginIso);
-        if (d === null || d < 14) return false;
+        if (d === null || d < STALE_DAYS) return false;
       }
       return true;
     });
@@ -66,7 +66,7 @@ export default function DashboardPage() {
           );
     const stale = characters.filter((c) => {
       const d = daysSince(c.lastLoginIso);
-      return d !== null && d >= 14;
+      return d !== null && d >= STALE_DAYS;
     }).length;
     const errors = characters.filter((c) => c.status === "ERROR").length;
     return { total: characters.length, avg, stale, errors };
@@ -105,7 +105,7 @@ export default function DashboardPage() {
           <Stat label="등록된 캐릭터" value={stats.total} />
           <Stat label="평균 템렙 (OK)" value={stats.avg || "-"} />
           <Stat
-            label="14일+ 미접속"
+            label={`${STALE_DAYS}일+ 미접속`}
             value={stats.stale}
             tone={stats.stale > 0 ? "warn" : "default"}
           />

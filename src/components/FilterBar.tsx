@@ -1,6 +1,7 @@
 "use client";
 
 import type { SortField, SortDir } from "@/lib/types";
+import { STALE_DAYS } from "@/lib/format";
 
 interface Props {
   search: string;
@@ -79,7 +80,7 @@ export function FilterBar(props: Props) {
           onChange={props.onToggleStale}
           className="h-4 w-4 accent-brand-500"
         />
-        14일 이상 미접속만
+        {STALE_DAYS}일 이상 미접속만
       </label>
     </div>
   );
