@@ -1,7 +1,6 @@
 "use client";
 
 import type { SortField, SortDir } from "@/lib/types";
-import { STALE_DAYS } from "@/lib/format";
 
 interface Props {
   search: string;
@@ -15,6 +14,8 @@ interface Props {
   onToggleDir: () => void;
   staleOnly: boolean;
   onToggleStale: () => void;
+  staleDays: number;
+  onStaleDaysChange: (v: number) => void;
 }
 
 const SORT_OPTIONS: { value: SortField; label: string }[] = [
@@ -73,15 +74,32 @@ export function FilterBar(props: Props) {
         </button>
       </div>
 
-      <label className="ml-auto flex cursor-pointer items-center gap-2 text-sm text-[var(--text-muted)]">
+      <div className="ml-auto flex items-center gap-2 text-sm text-[var(--text-muted)]">
+        <label className="flex cursor-pointer items-center gap-2">
+          <input
+            type="checkbox"
+            checked={props.staleOnly}
+            onChange={props.onToggleStale}
+            className="h-4 w-4 accent-brand-500"
+          />
+          미접속 기준
+        </label>
         <input
-          type="checkbox"
-          checked={props.staleOnly}
-          onChange={props.onToggleStale}
-          className="h-4 w-4 accent-brand-500"
+          type="number"
+          min={1}
+          max={3650}
+          step={1}
+          value={props.staleDays}
+          onChange={(e) => {
+            const n = Number(e.target.value);
+            if (Number.isFinite(n)) props.onStaleDaysChange(n);
+          }}
+          className="w-20 rounded-md border border-[var(--border)] bg-[var(--surface-muted)] px-2 py-1.5 text-sm tabular-nums text-[var(--text)] focus:border-brand-500 focus:outline-none"
+          aria-label="미접속 기준 일수"
+          title="기본 180일. 1~3650 사이로 조정 가능."
         />
-        {STALE_DAYS}일 이상 미접속만
-      </label>
+        <span>일 이상</span>
+      </div>
     </div>
   );
 }

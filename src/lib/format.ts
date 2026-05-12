@@ -15,7 +15,6 @@ export function formatKst(iso: string | null): string {
 }
 
 export const STALE_DAYS = 180;
-export const STALE_DAYS_SEVERE = STALE_DAYS * 2;
 
 export function daysSince(iso: string | null): number | null {
   if (!iso) return null;

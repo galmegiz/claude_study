@@ -7,7 +7,7 @@ import { CharacterTable } from "@/components/CharacterTable";
 import { FilterBar } from "@/components/FilterBar";
 import { Stat } from "@/components/Stat";
 import type { SortDir, SortField } from "@/lib/types";
-import { daysSince, STALE_DAYS } from "@/lib/format";
+import { daysSince } from "@/lib/format";
 import { toCsv, downloadBlob } from "@/lib/csv";
 
 export default function DashboardPage() {
@@ -18,6 +18,8 @@ export default function DashboardPage() {
   const resetToSeed = useGuildStore((s) => s.resetToSeed);
   const clearAll = useGuildStore((s) => s.clearAll);
   const adminMode = useGuildStore((s) => s.adminMode);
+  const staleDays = useGuildStore((s) => s.staleDays);
+  const setStaleDays = useGuildStore((s) => s.setStaleDays);
 
   const [search, setSearch] = useState("");
   const [realmFilter, setRealmFilter] = useState("");
@@ -38,7 +40,7 @@ export default function DashboardPage() {
       if (realmFilter && c.realm !== realmFilter) return false;
       if (staleOnly) {
         const d = daysSince(c.lastLoginIso);
-        if (d === null || d < STALE_DAYS) return false;
+        if (d === null || d < staleDays) return false;
       }
       return true;
     });
@@ -54,7 +56,7 @@ export default function DashboardPage() {
       return String(av).localeCompare(String(bv), "ko") * dir;
     });
     return filtered;
-  }, [characters, search, realmFilter, sortField, sortDir, staleOnly]);
+  }, [characters, search, realmFilter, sortField, sortDir, staleOnly, staleDays]);
 
   const stats = useMemo(() => {
     const ok = characters.filter((c) => c.status === "OK");
@@ -66,11 +68,11 @@ export default function DashboardPage() {
           );
     const stale = characters.filter((c) => {
       const d = daysSince(c.lastLoginIso);
-      return d !== null && d >= STALE_DAYS;
+      return d !== null && d >= staleDays;
     }).length;
     const errors = characters.filter((c) => c.status === "ERROR").length;
     return { total: characters.length, avg, stale, errors };
-  }, [characters]);
+  }, [characters, staleDays]);
 
   const handleExportCsv = () => {
     downloadBlob("guild-characters.csv", toCsv(visible), "text/csv;charset=utf-8");
@@ -105,7 +107,7 @@ export default function DashboardPage() {
           <Stat label="등록된 캐릭터" value={stats.total} />
           <Stat label="평균 템렙 (OK)" value={stats.avg || "-"} />
           <Stat
-            label={`${STALE_DAYS}일+ 미접속`}
+            label={`${staleDays}일+ 미접속`}
             value={stats.stale}
             tone={stats.stale > 0 ? "warn" : "default"}
           />
@@ -130,6 +132,8 @@ export default function DashboardPage() {
           onToggleDir={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
           staleOnly={staleOnly}
           onToggleStale={() => setStaleOnly((v) => !v)}
+          staleDays={staleDays}
+          onStaleDaysChange={setStaleDays}
         />
 
         <div className="flex flex-wrap items-center gap-2">
@@ -191,6 +195,7 @@ export default function DashboardPage() {
           adminMode={adminMode}
           onDelete={removeCharacter}
           onRefresh={refreshCharacter}
+          staleDays={staleDays}
         />
         <p className="text-xs text-[var(--text-muted)]">
           보이는 행: {visible.length} / {characters.length}

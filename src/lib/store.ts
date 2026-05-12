@@ -5,6 +5,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import seedData from "../../data/characters.json";
 import type { Character, CharacterInput, CharacterClass } from "./types";
 import { dummyFetch } from "./dummyFetch";
+import { STALE_DAYS } from "./format";
 
 export interface PendingTarget {
   id: string;
@@ -33,8 +34,10 @@ interface GuildState {
   hydrated: boolean;
   adminMode: boolean;
   enrichment: EnrichmentState | null;
+  staleDays: number;
   setAdminMode: (v: boolean) => void;
   setHydrated: () => void;
+  setStaleDays: (v: number) => void;
   addCharacter: (input: CharacterInput) => Character;
   addMany: (inputs: CharacterInput[]) => { added: number; duplicates: number };
   addPending: (
@@ -66,8 +69,13 @@ export const useGuildStore = create<GuildState>()(
       hydrated: false,
       adminMode: false,
       enrichment: null,
+      staleDays: STALE_DAYS,
       setAdminMode: (v) => set({ adminMode: v }),
       setHydrated: () => set({ hydrated: true }),
+      setStaleDays: (v) => {
+        const n = Math.max(1, Math.min(3650, Math.floor(v)));
+        if (Number.isFinite(n)) set({ staleDays: n });
+      },
 
       addPending: (inputs) => {
         const next = [...get().characters];
@@ -264,6 +272,7 @@ export const useGuildStore = create<GuildState>()(
       partialize: (s) => ({
         characters: s.characters,
         adminMode: s.adminMode,
+        staleDays: s.staleDays,
       }),
       skipHydration: true,
       onRehydrateStorage: () => (state) => state?.setHydrated?.(),

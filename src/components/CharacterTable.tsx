@@ -1,22 +1,24 @@
 "use client";
 
 import type { Character } from "@/lib/types";
-import {
-  formatKst,
-  daysSince,
-  cx,
-  STALE_DAYS,
-  STALE_DAYS_SEVERE,
-} from "@/lib/format";
+import { formatKst, daysSince, cx } from "@/lib/format";
 
 interface Props {
   rows: Character[];
   adminMode: boolean;
   onDelete: (id: string) => void;
   onRefresh: (id: string) => void;
+  staleDays: number;
 }
 
-export function CharacterTable({ rows, adminMode, onDelete, onRefresh }: Props) {
+export function CharacterTable({
+  rows,
+  adminMode,
+  onDelete,
+  onRefresh,
+  staleDays,
+}: Props) {
+  const severeDays = staleDays * 2;
   if (rows.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--surface)] px-6 py-12 text-center text-sm text-[var(--text-muted)]">
@@ -47,9 +49,9 @@ export function CharacterTable({ rows, adminMode, onDelete, onRefresh }: Props) 
             const staleTone =
               stale === null
                 ? "text-[var(--text-muted)]"
-                : stale >= STALE_DAYS_SEVERE
+                : stale >= severeDays
                   ? "text-rose-400"
-                  : stale >= STALE_DAYS
+                  : stale >= staleDays
                     ? "text-amber-400"
                     : "text-emerald-400";
 
