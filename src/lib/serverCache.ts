@@ -1,16 +1,11 @@
-import fs from "node:fs/promises";
-import path from "node:path";
-
-const CACHE_DIR = process.env.VERCEL
-  ? "/tmp/wow-guild-cache"
-  : path.join(process.cwd(), ".cache");
+import { Redis } from "@upstash/redis";
 
 export const DEFAULT_TTL_MS = 5 * 60 * 1000;
 
 interface CacheEntry<T> {
   value: T;
-  expiresAt: number;
   storedAt: number;
+  expiresAt: number;
 }
 
 export interface CacheHit<T> {
@@ -20,32 +15,36 @@ export interface CacheHit<T> {
   storedAt: number;
 }
 
-function slugify(s: string): string {
-  return s.replace(/[^a-zA-Z0-9가-힣_-]/g, "_").slice(0, 120);
+let client: Redis | null = null;
+function getClient(): Redis | null {
+  if (client) return client;
+  const url =
+    process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL;
+  const token =
+    process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+  client = new Redis({ url, token });
+  return client;
 }
 
-function pathFor(kind: string, key: string): string {
-  return path.join(CACHE_DIR, `${slugify(kind)}__${slugify(key)}.json`);
+function keyFor(kind: string, key: string): string {
+  return `wow-guild:${kind}:${key}`;
 }
 
 export async function cacheGet<T>(
   kind: string,
   key: string,
 ): Promise<CacheHit<T> | null> {
+  const redis = getClient();
+  if (!redis) return null;
   try {
-    const file = pathFor(kind, key);
-    const raw = await fs.readFile(file, "utf8");
-    const parsed = JSON.parse(raw) as CacheEntry<T>;
-    const now = Date.now();
-    if (!parsed.expiresAt || now > parsed.expiresAt) {
-      fs.unlink(file).catch(() => {});
-      return null;
-    }
+    const entry = await redis.get<CacheEntry<T>>(keyFor(kind, key));
+    if (!entry) return null;
     return {
-      value: parsed.value,
-      ageMs: now - parsed.storedAt,
-      expiresAt: parsed.expiresAt,
-      storedAt: parsed.storedAt,
+      value: entry.value,
+      storedAt: entry.storedAt,
+      ageMs: Date.now() - entry.storedAt,
+      expiresAt: entry.expiresAt,
     };
   } catch {
     return null;
@@ -58,17 +57,17 @@ export async function cacheSet<T>(
   value: T,
   ttlMs: number = DEFAULT_TTL_MS,
 ): Promise<void> {
+  const redis = getClient();
+  if (!redis) return;
   try {
-    await fs.mkdir(CACHE_DIR, { recursive: true });
-    const file = pathFor(kind, key);
     const now = Date.now();
     const entry: CacheEntry<T> = {
       value,
       storedAt: now,
       expiresAt: now + ttlMs,
     };
-    await fs.writeFile(file, JSON.stringify(entry));
+    await redis.set(keyFor(kind, key), entry, { px: ttlMs });
   } catch {
-    // 디스크 캐시 실패는 무시 (Vercel readonly 환경 등). API 호출은 그대로 진행.
+    // 캐시 실패는 무시 — 원본 API 호출 결과는 그대로 반환.
   }
 }

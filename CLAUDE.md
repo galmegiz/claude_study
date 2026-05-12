@@ -75,7 +75,7 @@ src/lib/store.ts (Zustand + persist:localStorage, skipHydration)
 - **브라우저 전용 API** (`window`, `document`, `localStorage`) 는 client component 또는 이벤트 핸들러 내에서만 접근. `"use client"` 없는 파일에서 쓰면 빌드는 통과해도 prerender 단계에서 터짐.
 - **Tailwind 색상**: 브랜드 보라색은 `bg-brand-500 / 600 / 700` (tailwind.config.ts 정의). 배경/표면/텍스트는 CSS 변수 (`--background`, `--surface`, `--surface-muted`, `--border`, `--text`, `--text-muted`) — 다크모드 전제, 라이트모드는 없음.
 - **더미 시뮬레이션 문법**: 캐릭터 이름 안에 `"없는"` 포함 시 fetch 실패로 시뮬레이트. 에러 플로우 테스트에 사용할 때 이 규약을 유지.
-- **Vercel 배포**: 별도 `vercel.json` 없음. 레포 루트를 그대로 Vercel에 연결하면 자동으로 Next.js 프로젝트로 인식됨. 환경변수 필요 없음 (프로토타입은 전부 더미이므로).
+- **Vercel 배포**: 별도 `vercel.json` 없음. 레포 루트를 그대로 Vercel에 연결하면 자동으로 Next.js 프로젝트로 인식됨. 환경변수: Blizzard 자격증명 미설정 시 더미 폴백, Upstash Redis 미설정 시 캐시 비활성화 (앱은 동작). 영속 캐시가 필요하면 Vercel Storage에서 Upstash Redis를 붙여야 함 — serverless `/tmp` 는 인스턴스 간 공유되지 않으므로 파일 캐시는 사실상 무의미.
 - **legacy 디렉토리**: `_kotlin_legacy/` 는 `.gitignore`, `tsconfig.json` (exclude), `eslint.config.mjs` (ignores) 에 전부 등록돼 있음. 여기에 새 코드를 추가하지 말 것 — 리포 정리 시 일괄 삭제 가능해야 함.
 
 ## 확장 시 주의
