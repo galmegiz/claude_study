@@ -15,6 +15,7 @@ export default function DashboardPage() {
   const removeCharacter = useGuildStore((s) => s.removeCharacter);
   const refreshCharacter = useGuildStore((s) => s.refreshCharacter);
   const refreshAll = useGuildStore((s) => s.refreshAll);
+  const retryErrors = useGuildStore((s) => s.retryErrors);
   const resetToSeed = useGuildStore((s) => s.resetToSeed);
   const clearAll = useGuildStore((s) => s.clearAll);
   const adminMode = useGuildStore((s) => s.adminMode);
@@ -28,6 +29,7 @@ export default function DashboardPage() {
   const [sortField, setSortField] = useState<SortField>("equippedItemLevel");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [staleOnly, setStaleOnly] = useState(false);
+  const [errorOnly, setErrorOnly] = useState(false);
 
   const realms = useMemo(
     () => Array.from(new Set(characters.map((c) => c.realm))).sort(),
@@ -44,6 +46,7 @@ export default function DashboardPage() {
         const d = daysSince(c.lastLoginIso);
         if (d === null || d < staleDays) return false;
       }
+      if (errorOnly && c.status !== "ERROR") return false;
       return true;
     });
 
@@ -58,7 +61,7 @@ export default function DashboardPage() {
       return String(av).localeCompare(String(bv), "ko") * dir;
     });
     return filtered;
-  }, [characters, search, realmFilter, sortField, sortDir, staleOnly, staleDays]);
+  }, [characters, search, realmFilter, sortField, sortDir, staleOnly, errorOnly, staleDays]);
 
   const stats = useMemo(() => {
     const ok = characters.filter((c) => c.status === "OK");
@@ -95,7 +98,7 @@ export default function DashboardPage() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">길드원 대시보드</h1>
             <p className="mt-1 text-sm text-[var(--text-muted)]">
-              총 {characters.length}명 · 더미 데이터 기반. 값은 재조회 시 랜덤 갱신됩니다.
+              총 {characters.length}명
             </p>
             <p className="mt-1 text-xs text-[var(--text-muted)]">
               마지막 갱신:{" "}
@@ -120,11 +123,15 @@ export default function DashboardPage() {
             label={`${staleDays}일+ 미접속`}
             value={stats.stale}
             tone={stats.stale > 0 ? "warn" : "default"}
+            onClick={() => setStaleOnly((v) => !v)}
+            active={staleOnly}
           />
           <Stat
             label="조회 실패"
             value={stats.errors}
             tone={stats.errors > 0 ? "bad" : "default"}
+            onClick={() => setErrorOnly((v) => !v)}
+            active={errorOnly}
           />
         </div>
       </section>
@@ -169,6 +176,14 @@ export default function DashboardPage() {
                 className="rounded-md border border-amber-400/40 bg-amber-400/10 px-3 py-1.5 text-sm text-amber-200 hover:bg-amber-400/20"
               >
                 전체 재조회
+              </button>
+              <button
+                type="button"
+                onClick={() => void retryErrors()}
+                disabled={stats.errors === 0}
+                className="rounded-md border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-sm text-rose-300 hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                실패 항목 재시도 ({stats.errors})
               </button>
               <div className="ml-auto flex items-center gap-2">
                 <button

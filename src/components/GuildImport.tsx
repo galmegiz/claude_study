@@ -95,9 +95,7 @@ export function GuildImport({ onImportComplete }: Props) {
     setNameFilter("");
 
     if (result.source !== "api") {
-      onImportComplete(
-        `더미 ${targets.length}명 추가 · 상세 갱신은 실제 API 자격증명이 있을 때만 동작.`,
-      );
+      onImportComplete(`${targets.length}명 추가됨.`);
       return;
     }
 
@@ -213,12 +211,7 @@ export function GuildImport({ onImportComplete }: Props) {
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-xs text-[var(--text-muted)]">
-          서버 환경변수에 <code className="font-mono">BLIZZARD_CLIENT_ID</code> /
-          <code className="font-mono">BLIZZARD_CLIENT_SECRET</code> 설정 시 실제
-          Blizzard API 사용, 없으면 더미 폴백.
-        </p>
+      <div className="flex items-center justify-end gap-2">
         <button
           type="button"
           onClick={fetchRoster}

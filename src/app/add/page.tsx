@@ -38,11 +38,6 @@ export default function AddPage() {
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">
           길드원 갱신
         </h1>
-        <p className="mt-1 text-sm text-[var(--text-muted)]">
-          전투정보실 길드 페이지로부터 길드원 목록을 가져옵니다.
-          {adminMode &&
-            " 관리자 모드에서는 수기 입력 / CSV 업로드 탭도 사용할 수 있습니다."}
-        </p>
       </div>
 
       <div className="inline-flex gap-1 self-start rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1 text-sm">

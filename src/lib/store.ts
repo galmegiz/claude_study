@@ -4,6 +4,7 @@ import { create } from "zustand";
 import seedData from "../../data/characters.json";
 import type { Character, CharacterInput, CharacterClass } from "./types";
 import { dummyFetch } from "./dummyFetch";
+import { enrichRoster } from "./enrichRoster";
 import { STALE_DAYS } from "./format";
 
 export interface PendingTarget {
@@ -56,6 +57,7 @@ interface GuildState {
   removeCharacter: (id: string) => void;
   refreshCharacter: (id: string) => void;
   refreshAll: () => void;
+  retryErrors: () => Promise<void>;
   resetToSeed: () => void;
   clearAll: () => void;
 }
@@ -329,6 +331,29 @@ export const useGuildStore = create<GuildState>()((set, get) => {
         }),
       });
       save();
+    },
+
+    retryErrors: async () => {
+      const errored = get().characters.filter((c) => c.status === "ERROR");
+      if (errored.length === 0) return;
+      const targets: PendingTarget[] = errored.map((c) => ({
+        id: c.id,
+        realm: c.realm,
+        name: c.name,
+      }));
+      set({
+        characters: get().characters.map((c) =>
+          c.status === "ERROR" ? { ...c, status: "PENDING" } : c,
+        ),
+      });
+      save();
+      get().startEnrichment(targets.length);
+      await enrichRoster(targets, {
+        onOk: (id, data) => get().applyProfile(id, data),
+        onError: (id) => get().markError(id),
+        onProgress: () => get().tickEnrichment(),
+      });
+      get().endEnrichment();
     },
 
     resetToSeed: () => {
