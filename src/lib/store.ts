@@ -1,7 +1,6 @@
 "use client";
 
 import { create } from "zustand";
-import seedData from "../../data/characters.json";
 import type { Character, CharacterInput, CharacterClass } from "./types";
 import { dummyFetch } from "./dummyFetch";
 import { enrichRoster } from "./enrichRoster";
@@ -26,8 +25,6 @@ export interface EnrichmentState {
   done: number;
   startedAt: number;
 }
-
-const SEED: Character[] = seedData as Character[];
 
 interface ServerState {
   characters: Character[] | null;
@@ -58,7 +55,6 @@ interface GuildState {
   refreshCharacter: (id: string) => void;
   refreshAll: () => void;
   retryErrors: () => Promise<void>;
-  resetToSeed: () => void;
   clearAll: () => void;
 }
 
@@ -119,18 +115,11 @@ export const useGuildStore = create<GuildState>()((set, get) => {
           return;
         }
         const data = (await res.json()) as ServerState;
-        if (data.characters === null) {
-          // 서버 키 없음 = 최초 실행 → 시드를 서버에 기록
-          set({ characters: SEED, hydrated: true });
-          const updatedAt = await persistToServer(SEED);
-          if (updatedAt) set({ lastUpdatedAt: updatedAt });
-        } else {
-          set({
-            characters: data.characters,
-            lastUpdatedAt: data.updatedAt,
-            hydrated: true,
-          });
-        }
+        set({
+          characters: data.characters ?? [],
+          lastUpdatedAt: data.updatedAt,
+          hydrated: true,
+        });
       } catch (e) {
         console.error("[guild-store] load error:", e);
       }
@@ -354,11 +343,6 @@ export const useGuildStore = create<GuildState>()((set, get) => {
         onProgress: () => get().tickEnrichment(),
       });
       get().endEnrichment();
-    },
-
-    resetToSeed: () => {
-      set({ characters: SEED });
-      save();
     },
 
     clearAll: () => {

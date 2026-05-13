@@ -16,7 +16,6 @@ export default function DashboardPage() {
   const refreshCharacter = useGuildStore((s) => s.refreshCharacter);
   const refreshAll = useGuildStore((s) => s.refreshAll);
   const retryErrors = useGuildStore((s) => s.retryErrors);
-  const resetToSeed = useGuildStore((s) => s.resetToSeed);
   const clearAll = useGuildStore((s) => s.clearAll);
   const adminMode = useGuildStore((s) => s.adminMode);
   const staleDays = useGuildStore((s) => s.staleDays);
@@ -186,21 +185,6 @@ export default function DashboardPage() {
                 실패 항목 재시도 ({stats.errors})
               </button>
               <div className="ml-auto flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (
-                      confirm(
-                        "시드 데이터로 되돌리시겠습니까? 현재 변경사항이 사라집니다.",
-                      )
-                    ) {
-                      resetToSeed();
-                    }
-                  }}
-                  className="rounded-md border border-amber-400/40 bg-amber-400/10 px-3 py-1.5 text-sm text-amber-200 hover:bg-amber-400/20"
-                >
-                  시드로 리셋
-                </button>
                 <button
                   type="button"
                   onClick={() => {
