@@ -5,8 +5,8 @@ import { useGuildStore } from "@/lib/store";
 
 export function StoreHydrator() {
   useEffect(() => {
-    if (useGuildStore.persist.hasHydrated()) return;
-    void useGuildStore.persist.rehydrate();
+    if (useGuildStore.getState().hydrated) return;
+    void useGuildStore.getState().loadFromServer();
   }, []);
   return null;
 }

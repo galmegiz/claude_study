@@ -7,7 +7,7 @@ import { CharacterTable } from "@/components/CharacterTable";
 import { FilterBar } from "@/components/FilterBar";
 import { Stat } from "@/components/Stat";
 import type { SortDir, SortField } from "@/lib/types";
-import { daysSince } from "@/lib/format";
+import { daysSince, formatKst } from "@/lib/format";
 import { toCsv, downloadBlob } from "@/lib/csv";
 
 export default function DashboardPage() {
@@ -20,6 +20,8 @@ export default function DashboardPage() {
   const adminMode = useGuildStore((s) => s.adminMode);
   const staleDays = useGuildStore((s) => s.staleDays);
   const setStaleDays = useGuildStore((s) => s.setStaleDays);
+  const lastUpdatedAt = useGuildStore((s) => s.lastUpdatedAt);
+  const hydrated = useGuildStore((s) => s.hydrated);
 
   const [search, setSearch] = useState("");
   const [realmFilter, setRealmFilter] = useState("");
@@ -94,6 +96,14 @@ export default function DashboardPage() {
             <h1 className="text-2xl font-semibold tracking-tight">길드원 대시보드</h1>
             <p className="mt-1 text-sm text-[var(--text-muted)]">
               총 {characters.length}명 · 더미 데이터 기반. 값은 재조회 시 랜덤 갱신됩니다.
+            </p>
+            <p className="mt-1 text-xs text-[var(--text-muted)]">
+              마지막 갱신:{" "}
+              {!hydrated
+                ? "불러오는 중…"
+                : lastUpdatedAt
+                  ? formatKst(lastUpdatedAt)
+                  : "-"}
             </p>
           </div>
           <Link
