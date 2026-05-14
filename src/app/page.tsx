@@ -23,6 +23,7 @@ export default function DashboardPage() {
   const setStaleDays = useGuildStore((s) => s.setStaleDays);
   const lastUpdatedAt = useGuildStore((s) => s.lastUpdatedAt);
   const hydrated = useGuildStore((s) => s.hydrated);
+  const enrichment = useGuildStore((s) => s.enrichment);
 
   const [search, setSearch] = useState("");
   const [realmFilter, setRealmFilter] = useState("");
@@ -103,7 +104,7 @@ export default function DashboardPage() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">길드원 대시보드</h1>
             <p className="mt-1 text-sm text-[var(--text-muted)]">
-              총 {characters.length}명
+              {hydrated ? `총 ${characters.length}명` : " "}
             </p>
             <p className="mt-1 text-xs text-[var(--text-muted)]">
               마지막 갱신:{" "}
@@ -121,27 +122,75 @@ export default function DashboardPage() {
             길드원 갱신
           </Link>
         </div>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <Stat label="등록된 캐릭터" value={stats.total} />
-          <Stat label="평균 템렙 (OK)" value={stats.avg || "-"} />
-          <Stat
-            label={`${staleDays}일+ 미접속`}
-            value={stats.stale}
-            tone={stats.stale > 0 ? "warn" : "default"}
-            onClick={() => setStaleOnly((v) => !v)}
-            active={staleOnly}
-          />
-          <Stat
-            label="조회 실패"
-            value={stats.errors}
-            tone={stats.errors > 0 ? "bad" : "default"}
-            onClick={() => setErrorOnly((v) => !v)}
-            active={errorOnly}
-          />
-        </div>
+        {hydrated && (
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <Stat label="등록된 캐릭터" value={stats.total} />
+            <Stat label="평균 템렙 (OK)" value={stats.avg || "-"} />
+            <Stat
+              label={`${staleDays}일+ 미접속`}
+              value={stats.stale}
+              tone={stats.stale > 0 ? "warn" : "default"}
+              onClick={() => setStaleOnly((v) => !v)}
+              active={staleOnly}
+            />
+            <Stat
+              label="조회 실패"
+              value={stats.errors}
+              tone={stats.errors > 0 ? "bad" : "default"}
+              onClick={() => setErrorOnly((v) => !v)}
+              active={errorOnly}
+            />
+          </div>
+        )}
       </section>
 
+      {!hydrated ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-[var(--border)] bg-[var(--surface)] px-6 py-16 text-sm text-[var(--text-muted)]"
+        >
+          <span
+            aria-hidden="true"
+            className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent"
+          />
+          <span>길드원 정보를 불러오는 중…</span>
+        </div>
+      ) : (
       <section className="flex flex-col gap-3">
+        {enrichment && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex items-center gap-3 rounded-lg border border-brand-500/30 bg-brand-500/5 px-4 py-2.5 text-sm text-[var(--text)]"
+          >
+            <span
+              aria-hidden="true"
+              className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-brand-500 border-t-transparent"
+            />
+            <span className="tabular-nums">
+              길드원 프로필 갱신 중… {enrichment.done}/{enrichment.total}
+            </span>
+            <div
+              className="ml-auto h-1.5 w-32 overflow-hidden rounded-full bg-[var(--surface-muted)] sm:w-48"
+              aria-hidden="true"
+            >
+              <div
+                className="h-full bg-brand-500 transition-[width] duration-200 ease-out"
+                style={{
+                  width: `${
+                    enrichment.total > 0
+                      ? Math.min(
+                          100,
+                          Math.round((enrichment.done / enrichment.total) * 100),
+                        )
+                      : 0
+                  }%`,
+                }}
+              />
+            </div>
+          </div>
+        )}
         <FilterBar
           search={search}
           onSearch={setSearch}
@@ -216,6 +265,7 @@ export default function DashboardPage() {
           보이는 행: {visible.length} / {characters.length}
         </p>
       </section>
+      )}
     </div>
   );
 }
