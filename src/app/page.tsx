@@ -16,7 +16,7 @@ export default function DashboardPage() {
   const removeCharacter = useGuildStore((s) => s.removeCharacter);
   const refreshCharacter = useGuildStore((s) => s.refreshCharacter);
   const refreshAll = useGuildStore((s) => s.refreshAll);
-  const retryErrors = useGuildStore((s) => s.retryErrors);
+  const retryStuck = useGuildStore((s) => s.retryStuck);
   const clearAll = useGuildStore((s) => s.clearAll);
   const adminMode = useGuildStore((s) => s.adminMode);
   const staleDays = useGuildStore((s) => s.staleDays);
@@ -95,7 +95,10 @@ export default function DashboardPage() {
       return d !== null && d >= staleDays;
     }).length;
     const errors = characters.filter((c) => c.status === "ERROR").length;
-    return { total: characters.length, avg, stale, errors };
+    const stuck = characters.filter(
+      (c) => c.status === "ERROR" || c.status === "PENDING",
+    ).length;
+    return { total: characters.length, avg, stale, errors, stuck };
   }, [characters, staleDays]);
 
   const handleExportCsv = () => {
@@ -248,11 +251,11 @@ export default function DashboardPage() {
               </button>
               <button
                 type="button"
-                onClick={() => void retryErrors()}
-                disabled={stats.errors === 0}
+                onClick={() => void retryStuck()}
+                disabled={stats.stuck === 0}
                 className="rounded-md border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-sm text-rose-300 hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                실패 항목 재시도 ({stats.errors})
+                갱신 못 한 항목 재시도 ({stats.stuck})
               </button>
               <div className="ml-auto flex items-center gap-2">
                 <button

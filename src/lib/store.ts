@@ -57,7 +57,7 @@ interface GuildState {
   removeCharacter: (id: string) => void;
   refreshCharacter: (id: string) => void;
   refreshAll: () => void;
-  retryErrors: () => Promise<void>;
+  retryStuck: () => Promise<void>;
   clearAll: () => void;
 }
 
@@ -359,14 +359,17 @@ export const useGuildStore = create<GuildState>()((set, get) => {
       save();
     },
 
-    retryErrors: async () => {
-      const errored = get().characters.filter((c) => c.status === "ERROR");
-      if (errored.length === 0) return;
-      const targets: PendingTarget[] = errored.map((c) => ({
+    retryStuck: async () => {
+      const stuck = get().characters.filter(
+        (c) => c.status === "ERROR" || c.status === "PENDING",
+      );
+      if (stuck.length === 0) return;
+      const targets: PendingTarget[] = stuck.map((c) => ({
         id: c.id,
         realm: c.realm,
         name: c.name,
       }));
+      // ERROR → PENDING 으로 normalize (이미 PENDING 인 행은 그대로).
       set({
         characters: get().characters.map((c) =>
           c.status === "ERROR" ? { ...c, status: "PENDING" } : c,
