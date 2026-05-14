@@ -1,6 +1,7 @@
 "use client";
 
 import type { SortField, SortDir } from "@/lib/types";
+import { formatRealm } from "@/lib/realm";
 
 interface Props {
   search: string;
@@ -45,7 +46,7 @@ export function FilterBar(props: Props) {
         <option value="">모든 서버</option>
         {props.realms.map((r) => (
           <option key={r} value={r}>
-            {r}
+            {formatRealm(r)}
           </option>
         ))}
       </select>

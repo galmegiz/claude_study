@@ -2,6 +2,7 @@
 
 import type { Character } from "@/lib/types";
 import { formatKst, daysSince, cx } from "@/lib/format";
+import { formatRealm } from "@/lib/realm";
 
 interface Props {
   rows: Character[];
@@ -37,7 +38,6 @@ export function CharacterTable({
             <Th>직업</Th>
             <Th className="text-right">Lv</Th>
             <Th className="text-right">템렙(착용)</Th>
-            <Th className="text-right">템렙(평균)</Th>
             <Th>최종접속</Th>
             <Th>상태</Th>
             {adminMode && <Th className="text-right">액션</Th>}
@@ -66,14 +66,11 @@ export function CharacterTable({
                     <div className="text-xs text-[var(--text-muted)]">{c.note}</div>
                   )}
                 </Td>
-                <Td>{c.realm}</Td>
+                <Td>{formatRealm(c.realm)}</Td>
                 <Td>{c.charClass ?? "-"}</Td>
                 <Td className="text-right tabular-nums">{c.level ?? "-"}</Td>
                 <Td className="text-right tabular-nums font-medium">
                   {c.equippedItemLevel ?? "-"}
-                </Td>
-                <Td className="text-right tabular-nums text-[var(--text-muted)]">
-                  {c.averageItemLevel ?? "-"}
                 </Td>
                 <Td>
                   <div className={cx("tabular-nums", staleTone)}>

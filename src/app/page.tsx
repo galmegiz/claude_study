@@ -8,6 +8,7 @@ import { FilterBar } from "@/components/FilterBar";
 import { Stat } from "@/components/Stat";
 import type { SortDir, SortField } from "@/lib/types";
 import { daysSince, formatKst } from "@/lib/format";
+import { formatRealm } from "@/lib/realm";
 import { toCsv, downloadBlob } from "@/lib/csv";
 
 export default function DashboardPage() {
@@ -38,7 +39,12 @@ export default function DashboardPage() {
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
     const filtered = characters.filter((c) => {
-      if (q && !c.name.toLowerCase().includes(q) && !c.realm.toLowerCase().includes(q))
+      if (
+        q &&
+        !c.name.toLowerCase().includes(q) &&
+        !c.realm.toLowerCase().includes(q) &&
+        !formatRealm(c.realm).toLowerCase().includes(q)
+      )
         return false;
       if (realmFilter && c.realm !== realmFilter) return false;
       if (staleOnly) {
