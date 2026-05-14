@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isConfigured, loadCharacters, saveCharacters } from "@/lib/serverStore";
+import { toRealmSlug } from "@/lib/realm";
 
 export const runtime = "nodejs";
 
@@ -24,19 +25,8 @@ interface NotesPayload {
   members?: IncomingMember[];
 }
 
-// 페이로드의 realm("Azshara", "Burning Steppes")을 우리 store의 realm slug
-// ("azshara", "burning-steppes")와 비교 가능한 형태로 정규화.
-// companion/payload.py:_slugify 와 같은 규칙 (a-z0-9가-힣 + 하이픈만 허용).
-function slugifyRealm(s: string): string {
-  return s
-    .trim()
-    .toLowerCase()
-    .replace(/[\s']+/g, "-")
-    .replace(/[^a-z0-9가-힣\-]+/g, "");
-}
-
 function matchKey(realm: string, name: string): string {
-  return `${slugifyRealm(realm)}::${name.trim().toLowerCase()}`;
+  return `${toRealmSlug(realm)}::${name.trim().toLowerCase()}`;
 }
 
 export async function POST(req: Request) {
