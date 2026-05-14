@@ -17,6 +17,8 @@ interface Props {
   onToggleStale: () => void;
   staleDays: number;
   onStaleDaysChange: (v: number) => void;
+  noteEmptyOnly: boolean;
+  onToggleNoteEmpty: () => void;
 }
 
 const SORT_OPTIONS: { value: SortField; label: string }[] = [
@@ -32,7 +34,7 @@ export function FilterBar(props: Props) {
     <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2">
       <input
         type="text"
-        placeholder="이름 또는 서버 검색"
+        placeholder="이름 / 서버 / 메모 검색"
         value={props.search}
         onChange={(e) => props.onSearch(e.target.value)}
         className="min-w-[180px] flex-1 rounded-md border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-1.5 text-sm text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-brand-500 focus:outline-none"
@@ -75,7 +77,16 @@ export function FilterBar(props: Props) {
         </button>
       </div>
 
-      <div className="ml-auto flex items-center gap-2 text-sm text-[var(--text-muted)]">
+      <div className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-[var(--text-muted)]">
+        <label className="flex cursor-pointer items-center gap-2">
+          <input
+            type="checkbox"
+            checked={props.noteEmptyOnly}
+            onChange={props.onToggleNoteEmpty}
+            className="h-4 w-4 accent-brand-500"
+          />
+          메모 없음
+        </label>
         <label className="flex cursor-pointer items-center gap-2">
           <input
             type="checkbox"

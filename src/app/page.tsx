@@ -31,6 +31,7 @@ export default function DashboardPage() {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [staleOnly, setStaleOnly] = useState(false);
   const [errorOnly, setErrorOnly] = useState(false);
+  const [noteEmptyOnly, setNoteEmptyOnly] = useState(false);
 
   const realms = useMemo(
     () => Array.from(new Set(characters.map((c) => c.realm))).sort(),
@@ -44,7 +45,8 @@ export default function DashboardPage() {
         q &&
         !c.name.toLowerCase().includes(q) &&
         !c.realm.toLowerCase().includes(q) &&
-        !formatRealm(c.realm).toLowerCase().includes(q)
+        !formatRealm(c.realm).toLowerCase().includes(q) &&
+        !(c.note ?? "").toLowerCase().includes(q)
       )
         return false;
       if (realmFilter && c.realm !== realmFilter) return false;
@@ -53,6 +55,7 @@ export default function DashboardPage() {
         if (d === null || d < staleDays) return false;
       }
       if (errorOnly && c.status !== "ERROR") return false;
+      if (noteEmptyOnly && c.note && c.note.trim() !== "") return false;
       return true;
     });
 
@@ -67,7 +70,17 @@ export default function DashboardPage() {
       return String(av).localeCompare(String(bv), "ko") * dir;
     });
     return filtered;
-  }, [characters, search, realmFilter, sortField, sortDir, staleOnly, errorOnly, staleDays]);
+  }, [
+    characters,
+    search,
+    realmFilter,
+    sortField,
+    sortDir,
+    staleOnly,
+    errorOnly,
+    noteEmptyOnly,
+    staleDays,
+  ]);
 
   const stats = useMemo(() => {
     const ok = characters.filter((c) => c.status === "OK");
@@ -205,6 +218,8 @@ export default function DashboardPage() {
           onToggleStale={() => setStaleOnly((v) => !v)}
           staleDays={staleDays}
           onStaleDaysChange={setStaleDays}
+          noteEmptyOnly={noteEmptyOnly}
+          onToggleNoteEmpty={() => setNoteEmptyOnly((v) => !v)}
         />
 
         <div className="flex flex-wrap items-center gap-2">
