@@ -15,6 +15,7 @@ interface RequestBody {
   realm?: string;
   guild?: string;
   fresh?: boolean;
+  dummy?: boolean;
 }
 
 interface RosterResponse {
@@ -106,7 +107,20 @@ export async function POST(req: Request) {
     }
   }
 
-  // 자격증명 없음 → 더미 폴백 (캐시 안 함)
+  // 자격증명 없음. 더미 폴백은 명시적 opt-in (body.dummy === true) 일 때만 동작.
+  // 그 전엔 NAME_POOL 데이터가 실제 길드원처럼 Redis에 저장되는 사고가 있었음.
+  if (!body.dummy) {
+    return NextResponse.json(
+      {
+        error: "BLIZZARD_NOT_CONFIGURED",
+        message:
+          "Blizzard API 자격증명(BLIZZARD_CLIENT_ID/SECRET)이 설정되지 않았습니다. " +
+          "더미 데이터로 시도하려면 요청 본문에 dummy: true 를 포함하세요.",
+      },
+      { status: 503 },
+    );
+  }
+
   await new Promise((r) => setTimeout(r, 300));
   const members = dummyGuildRoster(realm, guild);
   return NextResponse.json({

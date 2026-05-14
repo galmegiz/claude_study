@@ -46,6 +46,9 @@ interface GuildState {
   addPending: (
     inputs: (CharacterInput & { rank?: number })[],
   ) => { targets: PendingTarget[]; added: number; updated: number };
+  replacePending: (
+    inputs: (CharacterInput & { rank?: number })[],
+  ) => { targets: PendingTarget[]; total: number };
   applyProfile: (id: string, patch: ProfilePatch) => void;
   markError: (id: string) => void;
   startEnrichment: (total: number) => void;
@@ -187,6 +190,40 @@ export const useGuildStore = create<GuildState>()((set, get) => {
       set({ characters: next });
       save();
       return { targets, added, updated };
+    },
+
+    replacePending: (inputs) => {
+      const now = new Date().toISOString();
+      const next: Character[] = inputs.map((input) => {
+        const id = `api-${
+          typeof crypto !== "undefined" && crypto.randomUUID
+            ? crypto.randomUUID()
+            : Math.random().toString(36).slice(2)
+        }`;
+        return {
+          id,
+          realm: input.realm,
+          name: input.name,
+          charClass: (input.charClass as CharacterClass | undefined) ?? null,
+          level: input.level ?? null,
+          equippedItemLevel: null,
+          averageItemLevel: null,
+          lastLoginIso: null,
+          source: "api",
+          status: "PENDING",
+          rank: input.rank,
+          note: input.note,
+          addedAt: now,
+        };
+      });
+      set({ characters: next });
+      save();
+      const targets: PendingTarget[] = next.map((c) => ({
+        id: c.id,
+        realm: c.realm,
+        name: c.name,
+      }));
+      return { targets, total: next.length };
     },
 
     applyProfile: (id, patch) => {

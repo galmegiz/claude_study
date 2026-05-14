@@ -30,7 +30,8 @@ const EXAMPLE_URL =
   "https://worldofwarcraft.blizzard.com/ko-kr/guild/kr/azshara/nnde/";
 
 export function GuildImport({ onImportComplete }: Props) {
-  const addPending = useGuildStore((s) => s.addPending);
+  const replacePending = useGuildStore((s) => s.replacePending);
+  const existingCount = useGuildStore((s) => s.characters.length);
   const applyProfile = useGuildStore((s) => s.applyProfile);
   const markError = useGuildStore((s) => s.markError);
   const startEnrichment = useGuildStore((s) => s.startEnrichment);
@@ -49,17 +50,20 @@ export function GuildImport({ onImportComplete }: Props) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<FetchResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [needsDummyOptIn, setNeedsDummyOptIn] = useState(false);
   const [nameFilter, setNameFilter] = useState("");
 
-  const fetchRoster = async () => {
+  const fetchRoster = async (opts: { dummy?: boolean } = {}) => {
     setLoading(true);
     setError(null);
+    setNeedsDummyOptIn(false);
     setResult(null);
     try {
-      const body =
+      const base =
         mode === "url"
           ? { url: url.trim() }
           : { realm: realm.trim(), guild: guild.trim() };
+      const body = opts.dummy ? { ...base, dummy: true } : base;
       const resp = await fetch("/api/guild-roster", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -67,6 +71,11 @@ export function GuildImport({ onImportComplete }: Props) {
       });
       const data = await resp.json();
       if (!resp.ok) {
+        if (resp.status === 503 && data.error === "BLIZZARD_NOT_CONFIGURED") {
+          setNeedsDummyOptIn(true);
+          setError(data.message || data.error);
+          return;
+        }
         setError(data.error || `HTTP ${resp.status}`);
         return;
       }
@@ -81,7 +90,14 @@ export function GuildImport({ onImportComplete }: Props) {
   const importAll = async () => {
     if (!result) return;
 
-    const { targets, added, updated } = addPending(
+    if (existingCount > 0) {
+      const ok = confirm(
+        `기존 길드원 ${existingCount}명을 모두 삭제하고 새로 가져온 ${result.members.length}명으로 교체합니다.\n계속하시겠습니까?`,
+      );
+      if (!ok) return;
+    }
+
+    const { targets, total } = replacePending(
       result.members.map((m) => ({
         realm: m.realm,
         name: m.name,
@@ -95,17 +111,17 @@ export function GuildImport({ onImportComplete }: Props) {
     setNameFilter("");
 
     if (result.source !== "api") {
-      onImportComplete(`${targets.length}명 추가됨.`);
+      onImportComplete(`${total}명으로 교체됨.`);
       return;
     }
 
     if (targets.length === 0) {
-      onImportComplete("추가할 길드원이 없습니다.");
+      onImportComplete("길드원이 없습니다.");
       return;
     }
 
     onImportComplete(
-      `${targets.length}명 등록 (신규 ${added}, 갱신 ${updated}) — 백그라운드에서 상세 정보 갱신 중…`,
+      `${total}명으로 교체 — 백그라운드에서 상세 정보 갱신 중…`,
     );
 
     startEnrichment(targets.length);
@@ -214,7 +230,7 @@ export function GuildImport({ onImportComplete }: Props) {
       <div className="flex items-center justify-end gap-2">
         <button
           type="button"
-          onClick={fetchRoster}
+          onClick={() => void fetchRoster()}
           disabled={loading}
           className="rounded-md bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
@@ -223,9 +239,24 @@ export function GuildImport({ onImportComplete }: Props) {
       </div>
 
       {error && (
-        <p className="rounded-md bg-rose-500/10 px-3 py-2 text-sm text-rose-400">
-          {error}
-        </p>
+        <div className="flex flex-col gap-2 rounded-md bg-rose-500/10 px-3 py-2 text-sm text-rose-400">
+          <p>{error}</p>
+          {needsDummyOptIn && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void fetchRoster({ dummy: true })}
+                disabled={loading}
+                className="rounded border border-rose-400/40 bg-rose-500/10 px-2 py-1 text-xs text-rose-200 hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                더미 데이터로 시도
+              </button>
+              <span className="text-xs text-rose-300/70">
+                테스트용 가상 길드원 (실제 캐릭터 아님)
+              </span>
+            </div>
+          )}
+        </div>
       )}
 
       {result && (
@@ -252,7 +283,7 @@ export function GuildImport({ onImportComplete }: Props) {
               onClick={importAll}
               className="rounded bg-emerald-500 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-600"
             >
-              전체 추가 ({result.members.length})
+              전체 교체 ({result.members.length})
             </button>
           </div>
 
